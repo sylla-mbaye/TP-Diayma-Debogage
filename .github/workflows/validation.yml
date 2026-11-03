@@ -1,0 +1,31 @@
+name: Validation .NET historique
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  publication:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_MULTILEVEL_LOOKUP: '0'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '2.1.202'
+          skip-lts-prepass: true
+      - name: Sélectionner le SDK historique
+        shell: pwsh
+        run: Set-Content -Path global.json -Value '{"sdk":{"version":"2.1.202"}}' -Encoding utf8
+      - name: Publier pour Windows x64
+        shell: pwsh
+        run: dotnet publish P2FixAnAppDotNetCode/Diayma.csproj -c Release -r win-x64 --self-contained true -o publication
