@@ -116,7 +116,7 @@ dotnet publish P2FixAnAppDotNetCode/Diayma.csproj -c Release -r win-x64 --self-c
 
 La publication a réussi et Diayma.exe a été lancé localement. GET / a répondu **HTTP 200**, avec **9 produits** et la personnalisation à mon nom. Les deux bugs ont été reproduits sur cette version publiée.
 
-L’archive **Diayma-Mbaye-Sylla-Windows-x64.zip**, de **43 438 421 octets**, contient le runtime et les dépendances, le lanceur Lancer-Diayma.cmd, les instructions et VERIFICATION.txt. C’est une publication autonome à plusieurs fichiers : ne pas distribuer Diayma.exe seul.
+L’archive **Diayma-Mbaye-Sylla-Windows-x64.zip**, d’environ **43 Mo**, contient le runtime et les dépendances, le lanceur Lancer-Diayma.cmd, les instructions, VERIFICATION.txt et TRACE-DEBOGAGE.md. C’est une publication autonome à plusieurs fichiers : ne pas distribuer Diayma.exe seul.
 
 Extraire toute l’archive, double-cliquer sur **Lancer-Diayma.cmd**, laisser la fenêtre ouverte et consulter **http://127.0.0.1:5080**. L’application reste un serveur web local, pas une application de bureau. Fermer la fenêtre après utilisation.
 
