@@ -8,11 +8,13 @@ Je présente mon travail sur Boutique Diayma, à partir du dépôt de l’enseig
 
 J’ai personnalisé le titre, la navigation et le pied de page, compilé l’application et exécuté sa publication Windows. J’ai reproduit les deux bugs ci-dessous par HTTP, avec deux clients indépendants. Le code métier initial est conservé.
 
-> **Manipulations restant à réaliser dans Visual Studio :** ouvrir la solution, fermer l’avertissement s’il apparaît, poser les cinq points d’arrêt et effectuer le pas à pas. La question 8 repose sur le code source ; je ne présente pas une session de débogage comme effectuée.
+> **Vérification du débogage :** les cinq points d’arrêt ont été posés et atteints pendant une session réelle NetCoreDbg, avec pas à pas détaillé, principal et sortant. Les piles, les valeurs et l’ordre observé sont consignés dans [TRACE-DEBOGAGE.md](TRACE-DEBOGAGE.md). L’outil utilise le protocole DAP compatible avec les débogueurs de VS Code ; cette session ne repose pas sur l’interface Visual Studio.
 
 ## 1. Récupération et exécution
 
-Cloner mon dépôt en sélectionnant la branche **develop**, puis ouvrir **Diayma.sln** dans Visual Studio avec la charge de travail « Développement ASP.NET et web ». Restaurer les dépendances, définir Diayma comme projet de démarrage, puis lancer avec F5. Fermer l’avertissement demandé par l’énoncé s’il apparaît. Cette manipulation Visual Studio reste à réaliser ; l’exécution de l’application publiée, elle, a été vérifiée.
+La solution **Diayma.sln** a été récupérée, le projet a été compilé avec le SDK **2.1.202**, puis exécuté en publication Windows autonome. Une seconde publication en configuration **Debug**, avec symboles, a servi à la session de débogage décrite aux questions 7 et 8. Les requêtes vers l’accueil, le panier et la commande ont toutes répondu HTTP 200.
+
+Le débogage a été effectué avec **NetCoreDbg**, via le protocole **DAP**, les outils Visual Studio n’étant pas installés dans cet environnement. Aucun avertissement d’interface Visual Studio n’a donc été observé ni présenté comme fermé. Pour ouvrir la solution dans Visual Studio : charger Diayma.sln avec la charge de travail ASP.NET et web, sélectionner Diayma comme projet de démarrage et lancer en Debug avec F5.
 
 ## 2. Projets de la solution
 
@@ -50,7 +52,7 @@ Les deux bugs sont conservés pour l’exercice. Le panier de test a été vidé
 
 ## 7. Points d’arrêt
 
-Poser les points avec F9 sur ces instructions exécutables :
+Les cinq points ci-dessous ont été posés et **tous atteints** dans la session réelle. Les valeurs et les piles correspondantes sont dans [la trace](TRACE-DEBOGAGE.md). Pour les rejouer dans Visual Studio, F9 place un point sur ces instructions exécutables :
 
 - [CartSummaryViewComponent.cs:12](P2FixAnAppDotNetCode/Components/CartSummaryViewComponent.cs#L12) : affectation du panier dans le constructeur.
 - [ProductController.cs:15](P2FixAnAppDotNetCode/Controllers/ProductController.cs#L15) : affectation du service des produits.
@@ -62,11 +64,11 @@ Lancer en configuration Debug avec F5 et vérifier que les symboles sont chargé
 
 ## 8. Namespaces, classes, méthodes et pas à pas
 
-Cette description provient de l’analyse du source. Le framework exécute aussi son propre code ; l’ordre réel des constructions et du rendu est à constater avec la pile des appels dans Visual Studio.
+Le parcours du code ci-dessous est complété par une **session réelle de débogage**. L’ordre des arrêts, les méthodes et les valeurs observées sont disponibles dans [TRACE-DEBOGAGE.md](TRACE-DEBOGAGE.md). Le pas à pas a suivi ProductController.Index vers ProductService.GetAllProducts puis ProductRepository.GetAllProducts, et le retour vers le contrôleur. Le détail des opérations internes de MVC et Razor reste décrit à partir du source, sans inventer de points d’arrêt dans le framework.
 
 ### Démarrage
 
-Dans **P2FixAnAppDotNetCode**, Program.Main(string[] args) appelle BuildWebHost(args).Run(). Program.BuildWebHost utilise WebHost.CreateDefaultBuilder(args), UseStartup<Startup>() et Build(). [Source : Program.cs](P2FixAnAppDotNetCode/Program.cs).
+Dans **P2FixAnAppDotNetCode**, Program.Main(string[] args) appelle BuildWebHost(args).Run(). Program.BuildWebHost utilise WebHost.CreateDefaultBuilder(args), `UseStartup<Startup>()` et Build(). [Source : Program.cs](P2FixAnAppDotNetCode/Program.cs).
 
 Le framework instancie Startup : son constructeur reçoit IConfiguration et affecte Configuration. ConfigureServices(IServiceCollection) enregistre localisation, panier, services, dépôts, cache, session et MVC. Configure(IApplicationBuilder, IHostingEnvironment) installe le pipeline : fichiers statiques, localisation, session puis MVC. La route par défaut est **{controller=Product}/{action=Index}/{id?}**. [Source : Startup.cs](P2FixAnAppDotNetCode/Startup.cs).
 
@@ -76,18 +78,18 @@ AddSingleton et AddTransient précisent les durées de vie : ils ne prouvent pas
 
 La requête / sélectionne **P2FixAnAppDotNetCode.Controllers.ProductController.Index()**. Le constructeur de ProductController reçoit IProductService et ILanguageService. Le conteneur fournit ProductService et LanguageService, dans **P2FixAnAppDotNetCode.Models.Services**.
 
-ProductService reçoit IProductRepository et IOrderRepository. Leurs implémentations, **ProductRepository** et **OrderRepository**, sont dans **P2FixAnAppDotNetCode.Models.Repositories**. ProductRepository() crée la liste et appelle GenerateProductData(), qui construit les neuf **P2FixAnAppDotNetCode.Models.Product** avec identifiant, stock, prix, nom et description. OrderRepository() initialise sa liste de commandes ; aucune sauvegarde de commande n’est effectuée par Index(). La présence de LanguageService dans les dépendances ne signifie pas que ChangeUiLanguage() est appelé à l’accueil.
+ProductService reçoit IProductRepository et IOrderRepository. Leurs implémentations, **ProductRepository** et **OrderRepository**, sont dans **P2FixAnAppDotNetCode.Models.Repositories**. ProductRepository() crée la liste et appelle GenerateProductData(), qui construit les neuf **P2FixAnAppDotNetCode.Models.Product** avec identifiant, stock, prix, nom et description. OrderRepository() initialise sa liste de commandes ; aucune sauvegarde de commande n’est effectuée par Index(). La présence de LanguageService dans les dépendances ne signifie pas que ChangeUiLanguage() est appelé à l’accueil. Les deux instances ProductService et LanguageService ont été observées dans les arguments du constructeur de ProductController.
 
 ### Chargement des produits
 
 1. [ProductController.Index(), ligne 21](P2FixAnAppDotNetCode/Controllers/ProductController.cs#L21) appelle _productService.GetAllProducts().
-2. [ProductService.GetAllProducts(), ligne 24](P2FixAnAppDotNetCode/Models/Services/ProductService.cs#L24) appelle _productRepository.GetAllProducts() et convertit le résultat en List<Product>.
+2. [ProductService.GetAllProducts(), ligne 24](P2FixAnAppDotNetCode/Models/Services/ProductService.cs#L24) appelle _productRepository.GetAllProducts() et convertit le résultat en `List<Product>`.
 3. [ProductRepository.GetAllProducts(), ligne 41](P2FixAnAppDotNetCode/Models/Repositories/ProductRepository.cs#L41) sélectionne les produits dont Stock > 0, les trie par Name puis retourne un tableau.
 4. La liste remonte au service puis au contrôleur ; [ProductController, ligne 22](P2FixAnAppDotNetCode/Controllers/ProductController.cs#L22) retourne View(products). Ce retour prépare un résultat MVC ; le navigateur n’a pas encore nécessairement reçu la page.
 
 ### Rendu avant l’affichage
 
-MVC rend [Views/Product/Index.cshtml](P2FixAnAppDotNetCode/Views/Product/Index.cshtml) avec un modèle IEnumerable<Product>. La boucle foreach produit les lignes : nom, description, prix, stock et formulaire vers Cart/AddToCart.
+MVC rend [Views/Product/Index.cshtml](P2FixAnAppDotNetCode/Views/Product/Index.cshtml) avec un modèle `IEnumerable<Product>`. La boucle foreach produit les lignes : nom, description, prix, stock et formulaire vers Cart/AddToCart.
 
 Views/_ViewStart.cshtml désigne le layout _Layout. [Views/Shared/_Layout.cshtml](P2FixAnAppDotNetCode/Views/Shared/_Layout.cshtml) compose la page avec RenderBody() et les composants CartSummary et LanguageSelector.
 
@@ -102,7 +104,7 @@ Le traitement MVC et le rendu Razor précèdent l’envoi du HTML. CartControlle
 - **Maj+F11 — Pas à pas sortant** : terminer la méthode courante jusqu’au retour chez son appelant, du dépôt vers le service puis vers le contrôleur. Une exception ou un point d’arrêt peut interrompre ce retour.
 - **F5** : continuer jusqu’au prochain arrêt.
 
-Examiner Variables locales, Espions et Pile des appels à chaque arrêt. Relever dans Visual Studio l’ordre effectivement observé ; F11 ne traverse pas forcément automatiquement toute la chaîne asynchrone du rendu.
+Examiner Variables locales, Espions et Pile des appels à chaque arrêt. L’ordre effectivement observé figure dans la trace : démarrage, construction des dépôts et du service, ProductController, chargement de la liste, puis CartSummary. Au contrôleur, products passe de null à une instance `List<Product>` après le retour du service. L’accueil contient ensuite neuf produits. F11 ne traverse pas forcément automatiquement toute la chaîne asynchrone du rendu.
 
 ## 9. Exécutable Windows
 
